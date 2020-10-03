@@ -10,6 +10,7 @@ add x y = x + y
 
 double x = x + x
 
+quadruple :: Num a => a -> a
 quadruple x = double ( double x )
 
 factorial n = product [1 .. n]
@@ -23,3 +24,10 @@ poly x = let
 getEvens xs = filter (\x -> x `mod` 2 == 0) xs
 
 
+qsort :: Ord a => [a] -> [a]
+qsort [] = []
+qsort (x:xs) = qsort smaller ++ [x] ++ qsort larger
+                where
+                    smaller = [a | a <- xs, a <= x]
+                    larger  = [b | b <- xs, b > x]
+                    
