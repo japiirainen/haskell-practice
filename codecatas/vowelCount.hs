@@ -12,3 +12,7 @@ isVowel v =  case v of
 
 getCount :: String -> Int
 getCount  = length . filter isVowel 
+
+
+better :: String -> Int
+better = length . filter (`elem` "aeiou")
