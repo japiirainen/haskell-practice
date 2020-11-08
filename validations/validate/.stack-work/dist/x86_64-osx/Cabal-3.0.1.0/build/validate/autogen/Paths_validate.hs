@@ -30,7 +30,7 @@ version = Version [0,1,0,0] []
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
 
 bindir     = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/bin"
-libdir     = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/lib/x86_64-osx-ghc-8.8.4/validate-0.1.0.0-C7kYZH5jXbfLam500efMnb-validate"
+libdir     = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/lib/x86_64-osx-ghc-8.8.4/validate-0.1.0.0-BLGfquqd5LEIF6IqHEbZdK-validate"
 dynlibdir  = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/lib/x86_64-osx-ghc-8.8.4"
 datadir    = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/share/x86_64-osx-ghc-8.8.4/validate-0.1.0.0"
 libexecdir = "/Users/joona/dev/haskell-practice/validations/validate/.stack-work/install/x86_64-osx/91794f8331dd1222401ce72788d353dddc2f80045762f8846ec60d22814da2f0/8.8.4/libexec/x86_64-osx-ghc-8.8.4/validate-0.1.0.0"

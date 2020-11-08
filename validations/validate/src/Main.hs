@@ -1,43 +1,61 @@
 module Main where
 
 import Data.Char (isAlphaNum, isSpace)
+import Data.Validation
+newtype Password = Password String deriving (Eq, Show)
+newtype Error = Error String deriving (Eq, Show)
+newtype Username = Username String deriving (Eq, Show)
+data User = User Username Password deriving (Eq, Show)
 
-maxLength :: String -> Maybe String
-maxLength "" = Nothing
-maxLength xs = 
-    case length xs < 20 of
-        True -> Just xs
-        False -> Nothing
+passwordLength :: String -> Either Error Password
+passwordLength "" = Left $ Error "Password cannot be empty"
+passwordLength password = 
+    case length password < 20 of
+        True -> Right $ Password password
+        False -> Left $ Error "Password is too long ..."
 
-isAlpha :: String -> Maybe String
-isAlpha "" = Nothing
+usernameLength :: String -> Either Error Username
+usernameLength name = 
+    case length name > 15 of
+        True -> Left $ Error "Username is too long..."
+        False -> Right $ Username name
+
+isAlpha :: String -> Either Error String
+isAlpha "" = Left $ Error "Password cannot be empty"
 isAlpha xs = 
     case all isAlphaNum xs of
-        True -> Just xs
-        False -> Nothing
+        True -> Right xs
+        False -> Left $ Error "Password cannot contain special characters"
 
-stripSpace :: String -> Maybe String
-stripSpace "" = Nothing
+stripSpace :: String -> Either Error String
+stripSpace "" = Left $ Error "Password cannot be empty"
 stripSpace (x:xs) =
     case isSpace x of
         True -> stripSpace xs
-        False -> Just (x:xs)
+        False -> Right (x:xs)
 
-validate :: String -> Maybe String
-validate "" = Nothing
-validate xs = 
-    case stripSpace xs of
-        Nothing -> Nothing
-        Just xs ->
-            case isAlpha xs of
-                Nothing -> Nothing
-                Just xs -> 
-                    case maxLength xs of
-                        Nothing -> Nothing
-                        Just xs -> Just xs
+-- (>>=) :: Monad m => m a -> (a -> m b) -> m b
+validatePassword :: Password -> Either Error Password
+validatePassword (Password xs) =
+    stripSpace xs
+    >>= isAlpha
+    >>= passwordLength
+
+validateUsername :: Username -> Either Error Username
+validateUsername (Username xs) = 
+    stripSpace xs
+    >>= isAlpha
+    >>= usernameLength
+
+makeUser :: Username -> Password -> Either Error User
+makeUser username password = 
+    User <$> validateUsername username 
+         <*> validatePassword password
 
 main :: IO ()
 main = do
+  putStrLn "Please enter a username"
+  username <- Username <$> getLine
   putStrLn "Please enter a password"
-  password <- getLine
-  print $ validate password
+  password <- Password <$> getLine
+  print $ makeUser username password
