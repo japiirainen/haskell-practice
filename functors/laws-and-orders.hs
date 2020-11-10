@@ -12,11 +12,9 @@ instance Functor (FlippedEither s) where
     fmap f (Success y) = Success y
     fmap f (Error y)   = Error (f y)
 
---exercise: Write a re-ordered tuple functor,
---such that fmap (+1) (3, 4) returns (4,4) rather than (3,5)
-
---instance Functor ((,) b) where
---    fmap f (x, y) = (f x, y)
+--instance Functor ((->) a) where
+--    fmap :: (a -> b) -> ((->) w) a -> ((->) w) b
+--    fmap = (.)
 
 main :: IO ()
 main = putStrLn "Hello!"
