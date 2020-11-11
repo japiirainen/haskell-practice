@@ -11,6 +11,15 @@ data IncrementPair a =
 instance Functor IncrementPair where
     fmap f (IncrementPair int r) = IncrementPair (int + 1) (f r)
 
+data BackwardPair a = BackwardPair a a deriving (Eq, Show)
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+instance Functor BackwardPair where
+    fmap f (BackwardPair l r) = BackwardPair (f r) (f l)
+
+composedNum :: (Functor f, Num a) => f a -> f a
+composedNum = fmap (abs . (subtract 100))
+
+fcomposedNum :: (Functor f, Num a) => f a -> f a
+fcomposedNum = fmap abs . fmap (subtract 100)
+
+
