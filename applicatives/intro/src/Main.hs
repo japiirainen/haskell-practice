@@ -4,6 +4,7 @@ import Data.List (sortBy)
 import Data.Function (on)
 import Numeric.Natural
 
+
 data User = User { name :: String
                  , surname :: String
                  , age :: Natural
@@ -35,6 +36,15 @@ readSortMaybe ordering =
       "age"     -> Just $ sortBy (compare `on` age)
       _         -> Nothing
 
+liftAp :: Maybe (a -> b) -> Maybe a -> Maybe b
+liftAp _ Nothing = Nothing
+liftAp Nothing _ = Nothing
+liftAp (Just f) (Just x) = Just (f x)
+
+sortUsers :: String -> String -> Maybe [User]
+sortUsers ordering query =
+    readSortMaybe ordering
+    <*> fetchUsers query
 
 main :: IO ()
 main = do
