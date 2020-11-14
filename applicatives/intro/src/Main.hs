@@ -48,4 +48,4 @@ sortUsers ordering query =
 
 main :: IO ()
 main = do
-  putStrLn "hello world"
+  putStrLn "Well hello everyone"
