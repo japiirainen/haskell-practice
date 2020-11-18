@@ -30,7 +30,7 @@ version = Version [0,1,0,0] []
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
 
 bindir     = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/bin"
-libdir     = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/lib/x86_64-osx-ghc-8.8.4/hashing-0.1.0.0-C1V2czvU5Jv3KTDiXGEXHZ-hashable"
+libdir     = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/lib/x86_64-osx-ghc-8.8.4/hashing-0.1.0.0-Gyr0A1HbDMz7qL6ZKyJYBC-hashable"
 dynlibdir  = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/lib/x86_64-osx-ghc-8.8.4"
 datadir    = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/share/x86_64-osx-ghc-8.8.4/hashing-0.1.0.0"
 libexecdir = "/Users/joona/dev/haskell-practice/phrasebook/hashing/.stack-work/install/x86_64-osx/4a5584e216a8149c4988547affc0ef4b1b282c54a4018d772b6347a78c4a8b75/8.8.4/libexec/x86_64-osx-ghc-8.8.4/hashing-0.1.0.0"

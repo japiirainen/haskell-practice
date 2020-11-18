@@ -22,28 +22,6 @@
   (major1) == 4 && (major2) == 13 && (minor) <= 0)
 #endif /* MIN_VERSION_base */
 
-/* package bytestring-0.10.10.1 */
-#ifndef VERSION_bytestring
-#define VERSION_bytestring "0.10.10.1"
-#endif /* VERSION_bytestring */
-#ifndef MIN_VERSION_bytestring
-#define MIN_VERSION_bytestring(major1,major2,minor) (\
-  (major1) <  0 || \
-  (major1) == 0 && (major2) <  10 || \
-  (major1) == 0 && (major2) == 10 && (minor) <= 10)
-#endif /* MIN_VERSION_bytestring */
-
-/* package cryptonite-0.26 */
-#ifndef VERSION_cryptonite
-#define VERSION_cryptonite "0.26"
-#endif /* VERSION_cryptonite */
-#ifndef MIN_VERSION_cryptonite
-#define MIN_VERSION_cryptonite(major1,major2,minor) (\
-  (major1) <  0 || \
-  (major1) == 0 && (major2) <  26 || \
-  (major1) == 0 && (major2) == 26 && (minor) <= 0)
-#endif /* MIN_VERSION_cryptonite */
-
 /* package hashable-1.3.0.0 */
 #ifndef VERSION_hashable
 #define VERSION_hashable "1.3.0.0"
@@ -54,28 +32,6 @@
   (major1) == 1 && (major2) <  3 || \
   (major1) == 1 && (major2) == 3 && (minor) <= 0)
 #endif /* MIN_VERSION_hashable */
-
-/* package memory-0.15.0 */
-#ifndef VERSION_memory
-#define VERSION_memory "0.15.0"
-#endif /* VERSION_memory */
-#ifndef MIN_VERSION_memory
-#define MIN_VERSION_memory(major1,major2,minor) (\
-  (major1) <  0 || \
-  (major1) == 0 && (major2) <  15 || \
-  (major1) == 0 && (major2) == 15 && (minor) <= 0)
-#endif /* MIN_VERSION_memory */
-
-/* package utf8-string-1.0.1.1 */
-#ifndef VERSION_utf8_string
-#define VERSION_utf8_string "1.0.1.1"
-#endif /* VERSION_utf8_string */
-#ifndef MIN_VERSION_utf8_string
-#define MIN_VERSION_utf8_string(major1,major2,minor) (\
-  (major1) <  1 || \
-  (major1) == 1 && (major2) <  0 || \
-  (major1) == 1 && (major2) == 0 && (minor) <= 1)
-#endif /* MIN_VERSION_utf8_string */
 
 /* tool gcc-12.0.0 */
 #ifndef TOOL_VERSION_gcc
@@ -166,8 +122,11 @@
 #endif /* MIN_TOOL_VERSION_runghc */
 
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "hashing-0.1.0.0-Gyr0A1HbDMz7qL6ZKyJYBC-hashable"
+#define CURRENT_COMPONENT_ID "hashing-0.1.0.0-C1V2czvU5Jv3KTDiXGEXHZ-hashable"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"
 #endif /* CURRENT_PACKAGE_VERSION */
+
+#undef CURRENT_PACKAGE_KEY
+#undef CURRENT_COMPONENT_ID
