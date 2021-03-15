@@ -14,7 +14,9 @@ module HList where
 import           Data.Kind                      ( Constraint
                                                 , Type
                                                 )
-
+import           GHC.TypeLits                   ( ErrorMessage(Text)
+                                                , TypeError
+                                                )
 
 
 data HList (ts :: [Type]) where
@@ -47,6 +49,29 @@ type family All (c :: Type -> Constraint) (ts :: [Type]) :: Constraint where
     All c '[] = ()
     All c (t ': ts) = (c t, All c ts)
 
+type family Last (ts :: [Type]) :: Type where
+    Last '[] = TypeError (Text "Empty lists don't have Last type'")
+    Last (t ': '[]) = t
+    Last (t ': ts) = Last ts
+
+hLast :: HList ts -> Last ts
+hLast HNil               = error "hLast bottoms for empty list"
+hLast (t :# HNil       ) = t
+hLast (_ :# ts@(_ :# _)) = hLast ts
+
+showBool :: HList '[_1 , Bool , _2] -> String
+showBool (_ :# b :# _ :# HNil) = show b
+
+instance All Show ts => Show (HList ts) where
+    show HNil      = "HNil"
+    show (t :# ts) = show t <> " :# " <> show ts
+
+
+instance (All Eq ts, All Ord ts) => Ord (HList ts) where
+    HNil      `compare` HNil        = EQ
+    (t :# ts) `compare` (t' :# ts') = t `compare` t' <> ts `compare` ts'
+
 instance All Eq ts => Eq (HList ts) where
     HNil      == HNil      = True
     (a :# as) == (b :# bs) = a == a && as == bs
+
