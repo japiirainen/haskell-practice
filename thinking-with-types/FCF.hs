@@ -23,7 +23,7 @@ type instance Eval (FromMaybe a 'Nothing) = a
 
 data ListToMaybe :: [a] -> Exp Maybe a
 type instance Eval (ListToMaybe (a ': '[])) = 'Just a
-type instance Eval (ListToMaybe '[]) = Nothing
+type instance Eval (ListToMaybe '[]) = 'Nothing
 type instance Eval (ListToMaybe (_ ': _ ': _)) = 'Nothing
 
 data MapList :: (a -> Exp b) -> [a] -> Exp [b]
