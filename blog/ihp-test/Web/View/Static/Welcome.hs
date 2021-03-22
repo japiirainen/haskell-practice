@@ -30,5 +30,5 @@ instance View WelcomeView where
               <p style="color: hsla(196, 13%, 50%, 1); margin-top: 4rem">
                  You can modify this start page by making changes to "./Web/View/Static/Welcome.hs".
               </p>
-         </div>
+         </div> 
 |]
