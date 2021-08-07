@@ -1,6 +1,7 @@
 module Main where
 
-import Lib
+import           Lib
+import qualified Parser as P
 
 main :: IO ()
-main = someFunc
+main = P.main
