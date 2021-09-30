@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE RecordWildCards            #-}
-module Parser where
+module Co where
 
 import           Control.Monad                  (unless, void, when)
 import           Control.Monad.Base             (MonadBase)
@@ -257,3 +257,87 @@ evaluateBinaryOp ~(Binary op leftE rightE) = do
 
     (Equals, _, _)                -> pure $ Boolean $ left == right
     (NotEquals, _, _)             -> pure $ Boolean $ left /= right
+
+execute :: Stmt -> Interpreter ()
+execute = \case
+  ExprStmt expr -> void $ evaluate expr
+  VarStmt name expr -> evaluate expr >>= defineVar name
+  AssignStmt name expr -> evaluate expr >>= assignVar name
+  IfStmt expr body -> do
+    cond <- evaluate expr
+    when (isTruthy cond) $
+      traverse_ execute body
+  while@(WhileStmt expr body) -> do
+    cond <- evaluate expr
+    when (isTruthy cond) $ do
+      traverse_ execute body
+      execute while
+  ReturnStmt mExpr -> do
+    mRet <- traverse evaluate mExpr
+    throwError . Return . fromMaybe Null $ mRet
+  FunctionStmt name params body -> do
+    env <- State.gets isEnv
+    defineVar name $ Function name params body env
+  where
+    isTruthy = \case
+      Null      -> False
+      Boolean b -> b
+      _         -> True
+
+
+evaluateFuncCall :: Expr -> Interpreter Value
+evaluateFuncCall ~(Call funcName argsEs) = case funcName of
+  "print" -> executePrint argsEs
+  funcName -> lookupVar funcName >>= \case
+    func@Function {} -> evaluateFuncCall' func argsEs
+    val              -> throw $ "Cannot call a non-function: " <> show val
+  where
+    executePrint = \case
+      [expr] -> evaluate expr >>= liftIO . print >> return Null
+      _      -> throw "print takes exactly one argument"
+
+evaluateFuncCall' :: Value -> [Expr] -> Interpreter Value
+evaluateFuncCall' ~func@(Function funcName params body funcDefEnv) argEs = do
+  checkArgCount
+  funcCallEnv <- State.gets isEnv
+  setupFuncEnv
+  retVal <- executeBody funcCallEnv
+  setEnv funcCallEnv
+  return retVal
+  where
+    checkArgCount = when (length argEs /= length params) $
+      throw $ funcName <> " call expected " <> show (length params)
+        <> " argument(s) but got " <> show (length argEs)
+
+    setupFuncEnv = do
+      args <- traverse evaluate argEs
+      funcDefEnv' <- defineVarEnv funcName func funcDefEnv
+      setEnv funcDefEnv'
+      for_ (zip params args) $ uncurry defineVar
+
+    executeBody funcCallEnv =
+      (traverse_ execute body >> return Null) `catchError` \case
+        Return retVal -> return retVal
+        err           -> setEnv funcCallEnv >> throwError err
+
+interpret :: Program -> IO (Either String ())
+interpret program = do
+  state <- newInterpreterState
+  retVal <- flip evalStateT state
+      . runExceptT
+      . runInterpreter
+      $ traverse_ execute program
+  case retVal of
+    Left (RuntimeError err) -> return $ Left err
+    Left (Return _) -> return $ Left "Cannot return for outside functions"
+    Right _ -> return $ Right ()
+
+
+runFile :: FilePath -> IO ()
+runFile file = do
+  code <- readFile file
+  case runParser program code of
+    Left err -> hPutStrLn stderr err
+    Right program -> interpret program >>= \case
+      Left err -> hPutStrLn stderr $ "ERROR: " <> err
+      _        -> return ()
