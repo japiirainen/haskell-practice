@@ -149,3 +149,111 @@ stmt =
 
 program :: Parser Program
 program = sc *> many stmt <* eof
+
+data Value
+  = Null
+  | Boolean Bool
+  | Str String
+  | Num Integer
+  | Function Identifier [Identifier] [Stmt] Env
+
+instance Show Value where
+  show = \case
+    Null                -> "null"
+    Boolean b           -> show b
+    Str s               -> s
+    Num n               -> show n
+    Function name _ _ _ -> "function " <> name
+
+instance Eq Value where
+  Null == Null             = True
+  Boolean b1 == Boolean b2 = b1 == b2
+  Str s1 == Str s2         = s1 == s2
+  Num n1 == Num n2         = n1 == n2
+  _ == _                   = False
+
+newtype Interpreter a = Interpreter
+  { runInterpreter ::
+      ExceptT Exception (StateT InterpreterState IO) a
+  }
+  deriving (Functor, Applicative, Monad, MonadIO, MonadBase IO, MonadState InterpreterState, MonadError Exception)
+
+type Env = Map.Map Identifier (IORef Value)
+
+data InterpreterState = InterpreterState
+  { isEnv        :: Env
+  }
+
+newInterpreterState :: IO InterpreterState
+newInterpreterState = do
+  coroutines <- newIORef Seq.empty
+  return $ InterpreterState Map.empty
+
+data Exception
+  = Return Value
+  | RuntimeError String
+
+defineVar :: Identifier -> Value -> Interpreter ()
+defineVar name value = do
+  env <- State.gets isEnv
+  env' <- defineVarEnv name value env
+  setEnv env'
+
+defineVarEnv :: Identifier -> Value -> Env -> Interpreter Env
+defineVarEnv name value env = do
+  valueRef <- newIORef value
+  return $ Map.insert name valueRef env
+
+setEnv :: Env -> Interpreter ()
+setEnv env = State.modify' $ \is -> is { isEnv = env }
+
+lookupVar :: Identifier -> Interpreter Value
+lookupVar name =
+  State.gets isEnv >>= findValueRef name >>= readIORef
+
+assignVar :: Identifier -> Value -> Interpreter ()
+assignVar name value =
+  State.gets isEnv >>= findValueRef name >>= flip writeIORef value
+
+findValueRef :: Identifier -> Env -> Interpreter (IORef Value)
+findValueRef name env =
+  case Map.lookup name env of
+    Just ref -> return ref
+    Nothing  -> throw $ "Unknown variable: " <> name
+
+throw :: String -> Interpreter a
+throw = throwError . RuntimeError
+
+evaluate :: Expr -> Interpreter Value
+evaluate = \case
+  LNull            -> pure Null
+  LBool b          -> pure $ Boolean b
+  LStr s           -> pure $ Str s
+  LNum n           -> pure $ Num n
+  Variable name    -> lookupVar name
+  binary@Binary {} -> evaluateBinaryOp binary
+  call@Call {}     -> evaluateFuncCall call
+  _                -> throw "Not implemented"
+
+evaluateBinaryOp :: Expr -> Interpreter Value
+evaluateBinaryOp ~(Binary op leftE rightE) = do
+  left <- evaluate leftE
+  right <- evaluate rightE
+  let errMsg msg = msg <> ": " <> show left <> " and " <> show right
+  case (op, left, right) of
+    (Plus, Num n1, Num n2)        -> pure $ Num $ n1 + n2
+    (Plus, Str s1, Str s2)        -> pure $ Str $ s1 <> s2
+    (Plus, Str s1, _)             -> pure $ Str $ s1 <> show right
+    (Plus, _, Str s2)             -> pure $ Str $ show left <> s2
+    (Plus, _, _)                  -> throw $ errMsg "Cannot add or append"
+
+    (Minus, Num n1, Num n2)       -> pure $ Num $ n1 - n2
+    (Minus, _, _)                 -> throw $ errMsg "Cannot subtract"
+
+    (LessThan, Num n1, Num n2)    -> pure $ Boolean $ n1 < n2
+    (LessThan, _, _)              -> throw $ errMsg "Cannot compare non-numbers"
+    (GreaterThan, Num n1, Num n2) -> pure $ Boolean $ n1 > n2
+    (GreaterThan, _, _)           -> throw $ errMsg "Cannot compare non-numbers"
+
+    (Equals, _, _)                -> pure $ Boolean $ left == right
+    (NotEquals, _, _)             -> pure $ Boolean $ left /= right

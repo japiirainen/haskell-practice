@@ -25,8 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      Co
       Lib
-      Parser
   other-modules:
       Paths_co
   hs-source-dirs:
