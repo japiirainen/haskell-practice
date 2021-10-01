@@ -156,6 +156,7 @@ data Value
   | Str String
   | Num Integer
   | Function Identifier [Identifier] [Stmt] Env
+  | Chan Channel
 
 instance Show Value where
   show = \case
@@ -164,6 +165,7 @@ instance Show Value where
     Str s               -> s
     Num n               -> show n
     Function name _ _ _ -> "function " <> name
+    Chan Channel {}     -> "Channel"
 
 instance Eq Value where
   Null == Null             = True
@@ -172,26 +174,43 @@ instance Eq Value where
   Num n1 == Num n2         = n1 == n2
   _ == _                   = False
 
+data Coroutine a = Coroutine InterpreterState (a -> Interpreter ())
+
+data Channel = Channel
+  { channelSendQueue    :: Queue (Coroutine (), Value),
+    channelReceiveQueue :: Queue (Coroutine Value)
+  }
+
+newChannel :: Interpreter Channel
+newChannel = Channel <$> newIORef Seq.empty <*> newIORef Seq.empty
+
 newtype Interpreter a = Interpreter
   { runInterpreter ::
-      ExceptT Exception (StateT InterpreterState IO) a
+      ExceptT Exception (ContT
+      (Either Exception ())
+      (StateT InterpreterState IO))
+      a
   }
-  deriving (Functor, Applicative, Monad, MonadIO, MonadBase IO, MonadState InterpreterState, MonadError Exception)
+  deriving (Functor, Applicative, Monad, MonadIO, MonadBase IO, MonadState InterpreterState, MonadError Exception, MonadCont)
 
 type Env = Map.Map Identifier (IORef Value)
 
+type Queue a = IORef (Seq.Seq a)
+
 data InterpreterState = InterpreterState
   { isEnv        :: Env
+  , isCoroutines :: Queue (Coroutine ())
   }
 
 newInterpreterState :: IO InterpreterState
 newInterpreterState = do
   coroutines <- newIORef Seq.empty
-  return $ InterpreterState Map.empty
+  return $ InterpreterState Map.empty coroutines
 
 data Exception
   = Return Value
   | RuntimeError String
+  | CoroutineQueueEmpty
 
 defineVar :: Identifier -> Value -> Interpreter ()
 defineVar name value = do
@@ -233,7 +252,10 @@ evaluate = \case
   Variable name    -> lookupVar name
   binary@Binary {} -> evaluateBinaryOp binary
   call@Call {}     -> evaluateFuncCall call
-  _                -> throw "Not implemented"
+  Receive expr ->
+    evaluate expr >>= \case
+      Chan channel -> channelReceive channel
+      val          -> throw $ "Cannot receive from a non-channel: " <> show val
 
 evaluateBinaryOp :: Expr -> Interpreter Value
 evaluateBinaryOp ~(Binary op leftE rightE) = do
@@ -278,15 +300,89 @@ execute = \case
   FunctionStmt name params body -> do
     env <- State.gets isEnv
     defineVar name $ Function name params body env
+  YieldStmt -> yield
+  SpawnStmt expr -> spawn (void $ evaluate expr)
+  SendStmt expr chan -> do
+    val <- evaluate expr
+    evaluate (Variable chan) >>= \case
+      Chan channel -> channelSend val channel
+      val'         -> throw $ "Cannot send to a non-channel: " <> show val'
   where
     isTruthy = \case
       Null      -> False
       Boolean b -> b
       _         -> True
 
+enqueue :: a -> Queue a -> Interpreter ()
+enqueue val queue = modifyIORef' queue (|> val)
+
+dequeue :: Queue a -> Interpreter (Maybe a)
+dequeue queue = atomicModifyIORef' queue $ \values ->
+  case Seq.viewl values of
+    Seq.EmptyL  -> (values, Nothing)
+    val :< rest -> (rest, Just val)
+
+enqueueCoroutine :: Coroutine () -> Interpreter ()
+enqueueCoroutine coroutine = State.gets isCoroutines >>= enqueue coroutine
+
+dequeueCoroutine :: Interpreter ()
+dequeueCoroutine =
+  State.gets isCoroutines >>= dequeue >>= \case
+    Nothing                       -> throwError CoroutineQueueEmpty
+    Just (Coroutine state action) -> State.put state >> action ()
+
+yield :: Interpreter ()
+yield = do
+  state <- State.get
+  callCC $ \k -> do
+    enqueueCoroutine (Coroutine state k)
+    dequeueCoroutine
+
+spawn :: Interpreter () -> Interpreter ()
+spawn action = do
+  state <- State.get
+  callCC $ \k -> do
+    enqueueCoroutine (Coroutine state k)
+    action
+    dequeueCoroutine
+
+awaitTermination :: Interpreter ()
+awaitTermination = do
+  finished <- State.gets isCoroutines >>= fmap null . readIORef
+  unless finished $ yield >> awaitTermination
+
+channelSend :: Value -> Channel -> Interpreter ()
+channelSend value Channel {..} =
+  dequeue channelReceiveQueue >>= \case
+    Just (Coroutine state recieve) -> do
+      enqueueCoroutine $ Coroutine state (const $ recieve value)
+      yield
+    Nothing -> do
+      state <- State.get
+      callCC $ \k -> do
+        enqueue (Coroutine state k, value) channelSendQueue
+        dequeueCoroutine
+
+channelReceive :: Channel -> Interpreter Value
+channelReceive Channel {..} =
+  dequeue channelSendQueue >>= \case
+    Just (coroutine, value) -> do
+      enqueueCoroutine coroutine
+      state <- State.get
+      callCC $ \k -> do
+        enqueueCoroutine (Coroutine state (const $ k value))
+        dequeueCoroutine
+        return Null
+    Nothing -> do
+      state <- State.get
+      callCC $ \k -> do
+        enqueue (Coroutine state k) channelReceiveQueue
+        dequeueCoroutine
+        return Null
 
 evaluateFuncCall :: Expr -> Interpreter Value
 evaluateFuncCall ~(Call funcName argsEs) = case funcName of
+  "newChannel" -> Chan <$> newChannel
   "print" -> executePrint argsEs
   funcName -> lookupVar funcName >>= \case
     func@Function {} -> evaluateFuncCall' func argsEs
@@ -324,12 +420,14 @@ interpret :: Program -> IO (Either String ())
 interpret program = do
   state <- newInterpreterState
   retVal <- flip evalStateT state
+      . flip runContT return
       . runExceptT
       . runInterpreter
-      $ traverse_ execute program
+      $ (traverse_ execute program <* awaitTermination)
   case retVal of
     Left (RuntimeError err) -> return $ Left err
     Left (Return _) -> return $ Left "Cannot return for outside functions"
+    Left CoroutineQueueEmpty -> return $ Right ()
     Right _ -> return $ Right ()
 
 

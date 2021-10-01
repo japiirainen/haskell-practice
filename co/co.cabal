@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Co
+      Co2
       Lib
   other-modules:
       Paths_co
