@@ -15,6 +15,7 @@ import           Polysemy
 import           Polysemy.Error
 import           Polysemy.Input
 import           Polysemy.Output
+import           Polysemy.Reader
 import           Polysemy.Resource
 
 data Teletype m a where
