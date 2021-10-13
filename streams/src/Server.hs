@@ -48,5 +48,26 @@ commands = Map.fromList
 demux :: Fold IO (String, Socket) ()
 demux = snd <$> Fold.demuxDefault commands (Fold.drainBy def)
 
+handler :: Socket -> IO ()
+handler sk =
+      Stream.unfold Socket.read sk
+    & Unicode.decodeLatin1
+    & Stream.wordsBy isSpace Fold.toList
+    & Stream.map (, sk)
+    & Stream.fold demux
+    & discard
+
+    where
+        discard action = void action `catch` \(_ :: SomeException) -> return ()
+
+
+server :: IO ()
+server =
+      Stream.unfold TCP.acceptOnPort 8091
+    & Stream.fromSerial
+    & Stream.mapM (Socket.forSocketM handler)
+    & Stream.fromAsync
+    & Stream.drain
+
 main :: IO ()
-main = undefined
+main = server
