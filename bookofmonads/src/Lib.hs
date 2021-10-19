@@ -6,7 +6,6 @@ import           Control.Applicative (Applicative (liftA2))
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-
 newtype Identity a = I a
 
 instance Functor Identity where

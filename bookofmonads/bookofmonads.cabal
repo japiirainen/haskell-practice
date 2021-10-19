@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      State
   other-modules:
       Paths_bookofmonads
   hs-source-dirs:
