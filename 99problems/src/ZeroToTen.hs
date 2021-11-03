@@ -103,6 +103,25 @@ No.8
 "abcade"
 [1,2,3,4]
 -}
-
 compress :: Eq a => [a] -> [a]
 compress = (<$>) List.head . List.group
+
+
+{-|
+No.9
+>>> pack ['a', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'd', 'e', 'e', 'e', 'e']
+["aaaa","b","cc","aa","d","eeee"]
+-}
+pack :: Eq a => [a] -> [[a]]
+pack [] = []
+pack (x:xs) = (x:same) : pack rest
+    where (same, rest) = span (==x) xs
+
+{-|
+No.10
+>>> encode "aaaabccaadeeee"
+[(4,'a'),(1,'b'),(2,'c'),(2,'a'),(1,'d'),(4,'e')]
+-}
+encode :: Eq a => [a] -> [(Int, a)]
+encode xs = map (\x -> (length x, head x)) (pack xs)
+
